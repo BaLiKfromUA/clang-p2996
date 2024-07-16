@@ -241,4 +241,23 @@ static_assert(
                          std::views::transform(std::meta::reflect_value<int>)));
 }  // namespace with_non_contiguous_ranges
 
+namespace non_static_member_functions {
+
+struct Number {
+  constexpr Number(int v) : value(v) {}
+
+  consteval int plus(int a) const { return value + a; }
+
+  const int value;
+};
+
+constexpr Number num{42};
+// todo: investigate what behaviour should be when function is implicit
+// todo: check public/private and virtual
+
+static_assert(std::meta::reflect_value(84) ==
+              reflect_invoke(^Number::plus,
+                             {^num, std::meta::reflect_value(42)}));
+} // namespace non_static_member_functions
+
 int main() { }

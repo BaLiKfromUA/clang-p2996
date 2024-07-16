@@ -4344,17 +4344,27 @@ bool reflect_invoke(APValue &Result, Sema &S, EvalFn Evaluator,
   }
 
   ExprResult ER;
-  if (auto *DRE = dyn_cast<DeclRefExpr>(FnRefExpr);
-      DRE && dyn_cast<CXXConstructorDecl>(DRE->getDecl())) {
+  auto *DRE = dyn_cast<DeclRefExpr>(FnRefExpr);
+  if (DRE && dyn_cast<CXXConstructorDecl>(DRE->getDecl())) {
     auto *CtorD = cast<CXXConstructorDecl>(DRE->getDecl());
     ER = S.BuildCXXConstructExpr(
           Range.getBegin(), QualType(CtorD->getParent()->getTypeForDecl(), 0),
           CtorD, false, ArgExprs, false, false, false, false,
           CXXConstructionKind::Complete, Range);
+  } else if (DRE && dyn_cast<CXXMethodDecl>(DRE->getDecl())) {
+    auto * MD = cast<CXXMethodDecl>(DRE->getDecl());
+    if (MD->isStatic()) {
+      // todo: remove duplication??
+      ER = S.ActOnCallExpr(S.getCurScope(), FnRefExpr, Range.getBegin(), ArgExprs,
+                           Range.getEnd(), /*ExecConfig=*/nullptr);
+    } else {
+      // todo: add BuildCXXMemberCallExpr here??
+    }
   } else {
     ER = S.ActOnCallExpr(S.getCurScope(), FnRefExpr, Range.getBegin(), ArgExprs,
                          Range.getEnd(), /*ExecConfig=*/nullptr);
   }
+
   if (ER.isInvalid())
     return true;
   Expr *ResultExpr = ER.get();
