@@ -254,6 +254,7 @@ struct Number {
 constexpr Number num{42};
 // todo: investigate what behaviour should be when function is implicit
 // todo: check public/private and virtual
+// todo: check conversion functions
 
 static_assert(std::meta::reflect_value(84) ==
               reflect_invoke(^Number::plus,

@@ -4358,7 +4358,49 @@ bool reflect_invoke(APValue &Result, Sema &S, EvalFn Evaluator,
       ER = S.ActOnCallExpr(S.getCurScope(), FnRefExpr, Range.getBegin(), ArgExprs,
                            Range.getEnd(), /*ExecConfig=*/nullptr);
     } else {
-      // todo: add BuildCXXMemberCallExpr here??
+      auto ObjExpr = ArgExprs[0];
+      auto ObjType = desugarType(ObjExpr->getType(), true, true, true);
+      if (!ObjType->getAsCXXRecordDecl()) {
+        // first argument is not an object
+        return true;
+      }
+      SourceLocation ObjLoc = ObjExpr->getExprLoc();
+      UnqualifiedId Name;
+      Name.setIdentifier(MD->getIdentifier(), ObjLoc);
+
+
+      // todo: double check correctness
+      CXXScopeSpec SS;
+      if (const DeclContext *DC = MD->getDeclContext()) {
+        if (const auto *ND = dyn_cast<NamedDecl>(DC)) {
+          NestedNameSpecifier *NNS = NestedNameSpecifier::Create(S.Context, nullptr, ND->getIdentifier());
+          SS.MakeTrivial(S.Context, NNS, ObjLoc);
+        }
+      }
+
+      SourceLocation TemplateKWLoc; // empty because no template for now
+      // todo: improve for template member functions
+
+      ExprResult MemberAccessResult = S.ActOnMemberAccessExpr(
+          S.getCurScope(),
+          S.MakeFullExpr(ObjExpr).get(),
+          ObjLoc,
+          ObjExpr->getType()->isPointerType() ? tok::arrow : tok::period,
+          SS,
+          TemplateKWLoc,
+          Name, nullptr
+      );
+
+      if (MemberAccessResult.isInvalid()) {
+        return true;
+      }
+
+      SmallVector<Expr *, 4> ArgExprsForMethod;
+      ArgExprsForMethod.push_back(ArgExprs[1]); // todo: remove hardcode
+
+      ER = S.ActOnCallExpr(S.getCurScope(), MemberAccessResult.get(), Range.getBegin(), ArgExprsForMethod,
+                           Range.getEnd(), /*ExecConfig=*/nullptr);
+
     }
   } else {
     ER = S.ActOnCallExpr(S.getCurScope(), FnRefExpr, Range.getBegin(), ArgExprs,
@@ -4389,6 +4431,8 @@ bool reflect_invoke(APValue &Result, Sema &S, EvalFn Evaluator,
           LVBase.is<const ValueDecl *>())
         return SetAndSucceed(Result,
                              makeReflection(LVBase.get<const ValueDecl *>()));
+
+  // todo: crashed somewhere here
 
   ConstantExpr *CE =
             ConstantExpr::CreateEmpty(S.Context,
