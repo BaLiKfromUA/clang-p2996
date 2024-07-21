@@ -252,6 +252,7 @@ struct Number {
 };
 
 constexpr Number num{42};
+constexpr auto num_ref = &num;
 // todo: investigate what behaviour should be when function is implicit
 // todo: check public/private and virtual
 // todo: check conversion functions
@@ -259,6 +260,10 @@ constexpr Number num{42};
 static_assert(std::meta::reflect_value(84) ==
               reflect_invoke(^Number::plus,
                              {^num, std::meta::reflect_value(42)}));
+
+static_assert(std::meta::reflect_value(84) ==
+              reflect_invoke(^Number::plus,
+                             {^num_ref, std::meta::reflect_value(42)}));
 } // namespace non_static_member_functions
 
 int main() { }
