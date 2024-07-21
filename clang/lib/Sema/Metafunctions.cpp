@@ -30,6 +30,7 @@
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
+#include <iostream>
 
 
 namespace clang {
@@ -4371,15 +4372,10 @@ bool reflect_invoke(APValue &Result, Sema &S, EvalFn Evaluator,
 
       // todo: double check correctness
       CXXScopeSpec SS;
-      if (const DeclContext *DC = MD->getDeclContext()) {
-        if (const auto *ND = dyn_cast<NamedDecl>(DC)) {
-          NestedNameSpecifier *NNS = NestedNameSpecifier::Create(S.Context, nullptr, ND->getIdentifier());
-          SS.MakeTrivial(S.Context, NNS, ObjLoc);
-        }
-      }
-
-      SourceLocation TemplateKWLoc; // empty because no template for now
       // todo: improve for template member functions
+
+      // Use an empty SourceLocation for TemplateKWLoc if no template arguments
+      SourceLocation TemplateKWLoc;
 
       ExprResult MemberAccessResult = S.ActOnMemberAccessExpr(
           S.getCurScope(),
@@ -4431,8 +4427,6 @@ bool reflect_invoke(APValue &Result, Sema &S, EvalFn Evaluator,
           LVBase.is<const ValueDecl *>())
         return SetAndSucceed(Result,
                              makeReflection(LVBase.get<const ValueDecl *>()));
-
-  // todo: crashed somewhere here
 
   ConstantExpr *CE =
             ConstantExpr::CreateEmpty(S.Context,
