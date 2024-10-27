@@ -17,6 +17,7 @@
 // [reflection]
 
 #include <experimental/meta>
+#include <type_traits>
 
 namespace NS {
 struct A {
@@ -32,9 +33,45 @@ struct A {
   };
 };
 
+template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+consteval T foo(T arg) {
+  return arg + 1;
+}
+
 struct B {};
 
+template <typename T>
+struct C {
+  T data;
+};
+
 int main() {
+              // ======================
+              // arguments validation
+              // ======================
+  reflect_invoke(^^foo, {^^int}, {std::meta::reflect_value(42)}); // ok
+
+  reflect_invoke(^^foo, {^^NS}, {std::meta::reflect_value(42)});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note-re@-2 {{a reflection of {{.*}} cannot represent a template argument}}
+
+  reflect_invoke(^^foo, {^^int}, {^^NS});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note-re@-2 {{a reflection of {{.*}} cannot represent a function argument}}
+
+  reflect_invoke(^^NS, {});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note-re@-2 {{cannot invoke {{.*}}}}
+
+  auto data = C<int>{3};
+  reflect_invoke(^^C, {});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note-re@-2 {{cannot invoke {{.*}}}}
+
+  reflect_invoke(^^foo, {^^data});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note-re@-2 {{no specialization of the function template {{.*}} matched the provided arguments}}
+
               // ======================
               // non-static member functions
               // ======================
