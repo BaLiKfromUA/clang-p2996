@@ -38,7 +38,21 @@ consteval T foo(T arg) {
   return arg + 1;
 }
 
-struct B {};
+int bar() {
+  return 42;
+}
+
+struct B {
+public:
+  constexpr B(const int _a) : a(_a) {}
+
+private:
+  [[maybe_unused]] const int a;
+};
+
+constexpr B createB(int a) {
+  return B(a);
+}
 
 template <typename T>
 struct C {
@@ -47,9 +61,13 @@ struct C {
 
 int main() {
               // ======================
-              // arguments validation
+              // common validation
               // ======================
   reflect_invoke(^^foo, {^^int}, {std::meta::reflect_value(42)}); // ok
+
+  reflect_invoke(^^bar, {});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note@-2 {{invocation is not a constant expression}}
 
   reflect_invoke(^^foo, {^^NS}, {std::meta::reflect_value(42)});
   // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
@@ -72,6 +90,10 @@ int main() {
   // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
   // expected-note-re@-2 {{no specialization of the function template {{.*}} matched the provided arguments}}
 
+  reflect_invoke(^^createB, {std::meta::reflect_value(42)});
+  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
+  // expected-note-re@-2 {{invocation evaluates to a value of non-structural type {{.*}}, which cannot be represented as a reflection}}
+
               // ======================
               // non-static member functions
               // ======================
@@ -90,7 +112,7 @@ int main() {
  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
  // expected-note@-2 {{expected related object reflection as a first argument for invoking non-static member function}}
 
- constexpr B differentClass{};
+ constexpr B differentClass{42};
  reflect_invoke(^^A::fn, {^^differentClass});
  // expected-error-re@-1 {{call to consteval function 'std::meta::reflect_invoke<{{.*}}>' is not a constant expression}}
  // expected-note@-2 {{method is not a member of given object reflection}}
