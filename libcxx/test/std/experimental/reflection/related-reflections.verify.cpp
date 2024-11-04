@@ -22,6 +22,10 @@
 template <typename T>
 class A {};
 
+int foo() {
+  return 42;
+}
+
 struct B {
   constexpr B() {}
 
@@ -31,12 +35,16 @@ struct B {
 };
 
 int main() {
-  // operator_of
+                  // ==============
+                  // operator_of
+                  // ==============
   std::meta::operator_of(^^int);
   // expected-error@-1 {{call to consteval function 'std::meta::operator_of' is not a constant expression}}
   // expected-note-re@-2 {{{{.*}} is not an operator or operator template}}
 
-  // type_of
+                  // ==============
+                  // type_of
+                  // ==============
   constexpr int a = 3;
   std::meta::type_of(^^a); // ok
 
@@ -61,7 +69,9 @@ int main() {
   // expected-error@-1 {{call to consteval function 'std::meta::type_of' is not a constant expression}}
   // expected-note-re@-2 {{cannot query the type of {{.*}}}}
 
-  // parent_of
+                  // ==============
+                  // parent_of
+                  // ==============
   parent_of(^^B::InnerCls); // ok
 
   std::meta::parent_of(^^::);
@@ -82,14 +92,16 @@ int main() {
   std::meta::parent_of(^^int);
   // expected-error@-1 {{call to consteval function 'std::meta::parent_of' is not a constant expression}}
 
-  // template_of
+                  // ==============
+                  // template_of
+                  // ==============
   template_of(^^A<int>); // ok
 
   template_of(^^B);
   // expected-error@-1 {{call to consteval function 'std::meta::template_of' is not a constant expression}}
   // expected-note@-2 {{expected a reflection of a template specialization}}
 
-  template_of(^^B::~B);
+  template_of(^^foo);
   // expected-error@-1 {{call to consteval function 'std::meta::template_of' is not a constant expression}}
   // expected-note@-2 {{expected a reflection of a template specialization}}
 
