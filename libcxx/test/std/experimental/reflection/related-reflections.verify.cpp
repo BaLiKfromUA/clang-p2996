@@ -82,12 +82,10 @@ int main() {
   // expected-error@-1 {{call to consteval function 'std::meta::parent_of' is not a constant expression}}
   // expected-note-re@-2 {{{{.*}} has no parent}}
 
-  /* TODO: check if this is a bug
-  constexpr B obj{};
-  std::meta::parent_of(^^obj);
-  // {{call to consteval function 'std::meta::parent_of' is not a constant expression}}
-  // {{{{.*}} has no parent}}
-  */
+  constexpr int b = 1;
+  std::meta::parent_of(object_of(^^b));
+  // expected-error@-1 {{call to consteval function 'std::meta::parent_of' is not a constant expression}}
+  // expected-note-re@-2 {{{{.*}} has no parent}}
 
   std::meta::parent_of(^^int);
   // expected-error@-1 {{call to consteval function 'std::meta::parent_of' is not a constant expression}}
