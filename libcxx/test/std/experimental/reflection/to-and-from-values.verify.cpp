@@ -17,6 +17,7 @@
 // [reflection]
 
 #include <experimental/meta>
+#include <utility>
 
 class A {
 public:
@@ -26,6 +27,8 @@ public:
 private:
   const int a = 42;
 };
+
+enum Enum { Value = 42 };
 
 int main() {
   constexpr int i = 1;
@@ -77,4 +80,30 @@ int main() {
   object_of(^^::);
   // expected-error@-1 {{call to consteval function 'std::meta::object_of' is not a constant expression}}
   // expected-note-re@-2 {{cannot query the object of {{.*}}}}
+
+              // ==============
+              // extract
+              // ==============
+  extract<int>(^^i); // ok
+
+  extract<A>(^^i);
+  // expected-error@-1 {{call to consteval function 'std::meta::extract<A>' is not a constant expression}}
+  // expected-note-re@-2 {{reflected value of type {{.*}} cannot be extracted as a value of type {{.*}}}}}
+
+  const auto [x, y] = std::pair{1, 2};
+  extract<int>(^^x);
+  // expected-error@-1 {{call to consteval function 'std::meta::extract<int>' is not a constant expression}}
+  // expected-note@-2 {{extraction from a reflection of a structured binding is not allowed}}
+
+  extract<int>(^^::);
+  // expected-error@-1 {{call to consteval function 'std::meta::extract<int>' is not a constant expression}}
+  // expected-note-re@-2 {{cannot extract a value from a reflection of {{.*}}}}
+
+  extract<int>(object_of(^^obj));
+  // expected-error@-1 {{call to consteval function 'std::meta::extract<int>' is not a constant expression}}
+  // expected-note-re@-2 {{reflected object of type {{.*}} cannot be extracted as a value of type {{.*}}}}}
+
+  extract<A>(^^Enum::Value);
+  // expected-error@-1 {{call to consteval function 'std::meta::extract<A>' is not a constant expression}}
+  // expected-note-re@-2 {{reflected enum constant of type {{.*}} cannot be extracted as a value of type {{.*}}}}}
 }
