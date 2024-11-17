@@ -20,6 +20,7 @@
 //
 // RUN: %{exec} %t.exe > %t.stdout
 
+#include <type_traits>
 #include <experimental/meta>
 
 #include <print>
@@ -302,5 +303,29 @@ static_assert(is_type(define_aggregate(^^S2, {
 })));
 
 }  // namespace repeat_calls
+
+namespace non_trivial_constructor_and_destructor {
+// https://github.com/bloomberg/clang-p2996/issues/115
+struct A {
+  constexpr A() {
+    // no-op
+  }
+
+  constexpr ~A() {
+    // no-op
+  }
+};
+
+union U;
+static_assert(is_type(define_aggregate(
+    ^^U,
+    {
+        data_member_spec(^^int),
+        data_member_spec(^^A),
+    })));
+
+static_assert(std::is_trivially_constructible_v<U> == true);
+static_assert(std::is_trivially_destructible_v<U> == true);
+} // namespace non_trivial_constructor_and_destructor
 
 int main() { }
