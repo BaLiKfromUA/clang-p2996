@@ -324,8 +324,14 @@ static_assert(is_type(define_aggregate(
         data_member_spec(^^A),
     })));
 
-static_assert(std::is_default_constructible_v<U> == true);
+static_assert(std::is_default_constructible<U>::value == true);
+static_assert(std::is_trivially_constructible<U>::value == false);
+
 static_assert(std::is_destructible<U>::value == true);
+static_assert(std::is_trivially_destructible<U>::value == false);
 } // namespace non_trivial_constructor_and_destructor
 
-int main() { }
+int main() {
+  non_trivial_constructor_and_destructor::U u{1};
+  u.~U();
+}
