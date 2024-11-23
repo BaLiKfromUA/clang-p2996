@@ -4537,21 +4537,38 @@ bool define_aggregate(APValue &Result, ASTContext &C, MetaActions &Meta,
 
     for (CXXConstructorDecl *CD : Definition->ctors()) {
       if (CD->isDefaultConstructor() && CD->isDeleted()) {
-        CD->setDeletedAsWritten(false);
+        CXXConstructorDecl *CanonicalCD = CD->getCanonicalDecl();
 
-        auto *EmptyBody = CompoundStmt::CreateEmpty(C, 0, false);
-        CD->setBody(EmptyBody);
-        CD->setAccess(AS_public);
+        CanonicalCD->setImplicit(false);
+        CanonicalCD->setDeletedAsWritten(false);
+        CanonicalCD->setDefaulted(false);
+        CanonicalCD->setAccess(AS_public);
+
+        auto *EmptyBody =
+            CompoundStmt::CreateEmpty(CanonicalCD->getASTContext(), 0, false);
+        CanonicalCD->setBody(EmptyBody);
+
+        assert(CD->isUserProvided());
+        assert(CD->isDefaultConstructor());
+        assert(!CD->isDeleted());
       }
     }
 
     if (CXXDestructorDecl *DD = Definition->getDestructor()) {
       if (DD->isDeleted()) {
-        DD->setDeletedAsWritten(false);
+        CXXDestructorDecl *CanonicalDD = DD->getCanonicalDecl();
 
-        auto *EmptyBody = CompoundStmt::CreateEmpty(C, 0, false);
-        DD->setBody(EmptyBody);
-        DD->setAccess(AS_public);
+        CanonicalDD->setImplicit(false);
+        CanonicalDD->setDeletedAsWritten(false);
+        CanonicalDD->setDefaulted(false);
+        CanonicalDD->setAccess(AS_public);
+
+        auto *EmptyBody =
+            CompoundStmt::CreateEmpty(CanonicalDD->getASTContext(), 0, false);
+        CanonicalDD->setBody(EmptyBody);
+
+        assert(DD->isUserProvided());
+        assert(!DD->isDeleted());
       }
     }
   }
