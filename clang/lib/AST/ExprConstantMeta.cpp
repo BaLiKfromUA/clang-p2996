@@ -4538,14 +4538,22 @@ bool define_aggregate(APValue &Result, ASTContext &C, MetaActions &Meta,
     for (CXXConstructorDecl *CD : Definition->ctors()) {
       if (CD->isDefaultConstructor() && CD->isDeleted()) {
         CD->setDeletedAsWritten(false);
-        CD->setExplicitlyDefaulted(true);
+
+        auto *EmptyBody = CompoundStmt::Create(
+            C, {}, FPOptionsOverride(), CD->getBeginLoc(), CD->getEndLoc());
+        CD->setBody(EmptyBody);
+        CD->setAccess(AS_public);
       }
     }
 
     if (CXXDestructorDecl *DD = Definition->getDestructor()) {
       if (DD->isDeleted()) {
         DD->setDeletedAsWritten(false);
-        DD->setExplicitlyDefaulted(true);
+
+        auto *EmptyBody = CompoundStmt::Create(
+            C, {}, FPOptionsOverride(), DD->getBeginLoc(), DD->getEndLoc());
+        DD->setBody(EmptyBody);
+        DD->setAccess(AS_public);
       }
     }
   }
