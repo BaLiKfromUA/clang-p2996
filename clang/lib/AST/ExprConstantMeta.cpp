@@ -4532,6 +4532,24 @@ bool define_aggregate(APValue &Result, ASTContext &C, MetaActions &Meta,
   if (!Definition)
     return true;
 
+  if (Definition->isUnion()) {
+    // union specific behaviour of "define_aggregate"
+
+    for (CXXConstructorDecl *CD : Definition->ctors()) {
+      if (CD->isDefaultConstructor() && CD->isDeleted()) {
+        CD->setDeletedAsWritten(false);
+        CD->setExplicitlyDefaulted(true);
+      }
+    }
+
+    if (CXXDestructorDecl *DD = Definition->getDestructor()) {
+      if (DD->isDeleted()) {
+        DD->setDeletedAsWritten(false);
+        DD->setExplicitlyDefaulted(true);
+      }
+    }
+  }
+
   C.recordClassMemberSpecHash(ToComplete, MemberSpecHash);
   return SetAndSucceed(Result, makeReflection(ToComplete));
 }

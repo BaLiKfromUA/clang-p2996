@@ -515,6 +515,8 @@ public:
 
     // Iterate over member specs.
     unsigned AnonMemCtr = 0;
+    bool AtLeastOneMemberIsNonTriviallyConstr = false;
+
     for (TagDataMemberSpec *MemberSpec : MemberSpecs) {
       // Build the member declaration.
       unsigned DiagID;
@@ -574,9 +576,24 @@ public:
               S.Context.getSizeType(), DefinitionLoc);
       }
 
+      if (const CXXRecordDecl *RD = MemberSpec->Ty->getAsCXXRecordDecl()) {
+        if (RD->hasUserDeclaredConstructor()) {
+          AtLeastOneMemberIsNonTriviallyConstr = true;
+        }
+      }
+
       VirtSpecifiers VS;
       S.ActOnCXXMemberDeclarator(&ClsScope, MemberAS, MemberDeclarator, MTP,
                                  BitWidthCE, VS, ICIS_NoInit);
+    }
+
+    const bool NeedToGenerateDefaultConstr =
+        IncompleteDecl->getTagKind() == TagTypeKind::Union &&
+        AtLeastOneMemberIsNonTriviallyConstr &&
+        NewDecl->needsImplicitDefaultConstructor();
+
+    if (NeedToGenerateDefaultConstr) {
+      S.DeclareImplicitDefaultConstructor(NewDecl);
     }
 
     // Finish the member-specification and the class definition.

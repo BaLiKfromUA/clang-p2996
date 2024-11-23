@@ -316,22 +316,39 @@ struct A {
   }
 };
 
+// all members of union are trivially constructible and destructible
 union U;
 static_assert(is_type(define_aggregate(
     ^^U,
     {
         data_member_spec(^^int),
-        data_member_spec(^^A),
+        data_member_spec(^^char),
     })));
 
 static_assert(std::is_default_constructible<U>::value == true);
-static_assert(std::is_trivially_constructible<U>::value == false);
+static_assert(std::is_trivially_constructible<U>::value == true);
 
 static_assert(std::is_destructible<U>::value == true);
-static_assert(std::is_trivially_destructible<U>::value == false);
+static_assert(std::is_trivially_destructible<U>::value == true);
+
+// at least one member of union has non-trivial constructor and destructor
+union UU;
+static_assert(is_type(define_aggregate(
+    ^^UU,
+    {
+        data_member_spec(^^int),
+        data_member_spec(^^A),
+    })));
+
+static_assert(std::is_default_constructible<UU>::value == true);
+static_assert(std::is_trivially_constructible<UU>::value == false);
+
+static_assert(std::is_destructible<UU>::value == true);
+static_assert(std::is_trivially_destructible<UU>::value == false);
+
 } // namespace non_trivial_constructor_and_destructor
 
 int main() {
-  non_trivial_constructor_and_destructor::U u{1};
-  u.~U();
+  non_trivial_constructor_and_destructor::UU u;
+  u.~UU();
 }
