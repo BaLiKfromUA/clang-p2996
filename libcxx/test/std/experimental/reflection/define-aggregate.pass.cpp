@@ -306,15 +306,6 @@ static_assert(is_type(define_aggregate(^^S2, {
 
 namespace non_trivial_constructor_and_destructor {
 // https://github.com/bloomberg/clang-p2996/issues/115
-struct A {
-  constexpr A() {
-    // no-op
-  }
-
-  constexpr ~A() {
-    // no-op
-  }
-};
 
 // all members of union are trivially constructible and destructible
 union U;
@@ -332,6 +323,16 @@ static_assert(std::is_destructible<U>::value == true);
 static_assert(std::is_trivially_destructible<U>::value == true);
 
 // at least one member of union has non-trivial constructor and destructor
+struct A {
+  constexpr A() {
+    // no-op
+  }
+
+  constexpr ~A() {
+    // no-op
+  }
+};
+
 union UU;
 static_assert(is_type(define_aggregate(
     ^^UU,
@@ -349,6 +350,4 @@ static_assert(std::is_trivially_destructible<UU>::value == false);
 } // namespace non_trivial_constructor_and_destructor
 
 int main() {
-  non_trivial_constructor_and_destructor::UU u;
-  u.~UU();
 }

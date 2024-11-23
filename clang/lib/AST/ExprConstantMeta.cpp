@@ -4539,8 +4539,7 @@ bool define_aggregate(APValue &Result, ASTContext &C, MetaActions &Meta,
       if (CD->isDefaultConstructor() && CD->isDeleted()) {
         CD->setDeletedAsWritten(false);
 
-        auto *EmptyBody = CompoundStmt::Create(
-            C, {}, FPOptionsOverride(), CD->getBeginLoc(), CD->getEndLoc());
+        auto *EmptyBody = CompoundStmt::CreateEmpty(C, 0, false);
         CD->setBody(EmptyBody);
         CD->setAccess(AS_public);
       }
@@ -4550,8 +4549,7 @@ bool define_aggregate(APValue &Result, ASTContext &C, MetaActions &Meta,
       if (DD->isDeleted()) {
         DD->setDeletedAsWritten(false);
 
-        auto *EmptyBody = CompoundStmt::Create(
-            C, {}, FPOptionsOverride(), DD->getBeginLoc(), DD->getEndLoc());
+        auto *EmptyBody = CompoundStmt::CreateEmpty(C, 0, false);
         DD->setBody(EmptyBody);
         DD->setAccess(AS_public);
       }
