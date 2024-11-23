@@ -349,4 +349,4 @@ static_assert(std::is_trivially_destructible<UU>::value == false);
 
 } // namespace non_trivial_constructor_and_destructor
 
-int main() {}
+int main() { }
